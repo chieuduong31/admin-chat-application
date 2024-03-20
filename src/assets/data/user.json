@@ -1,0 +1,20 @@
+[
+  {
+    "loginId": "uranai_a",
+    "username": "boi1",
+    "password": "aaaa",
+    "id": "1"
+  },
+  {
+    "loginId": "uranai_b",
+    "username": "boi2",
+    "password": "bbbb",
+    "id": "2"
+  },
+  {
+    "loginId": "uranai_c",
+    "username": "boi3",
+    "password": "cccc",
+    "id": "3"
+  }
+]
