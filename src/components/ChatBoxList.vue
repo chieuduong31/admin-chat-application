@@ -44,7 +44,6 @@
               :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'" />
           </div>
           <div class="col d-flex justify-content-around align-items-center">
-            {{ inputMsg }}
             <button class="btn btn-danger h-80 w-40" @click="sendMsg()"
               :disabled="currentChatbox == null || inputMsg == ''"
               :class="{ 'inactive': currentChatbox == null || inputMsg == '' }">送信</button>
