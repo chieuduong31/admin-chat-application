@@ -221,7 +221,7 @@ export default {
         lastEnd: new Date()
       })
 
-      this.currentChatbox = null
+      // this.currentChatbox = null
     },
     formatTimestamp(timestamp) {
       const date = timestamp.toDate()
