@@ -6,15 +6,13 @@
         <div class="row h-80 mb-3">
           <div class="col-9 bg-theme-color custom-height rounded overflow-auto">
             <div v-if="currentChatbox">
-              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id }"
-                class="p-3 py-4 m-3 msg-box w-60">
+              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id }" class="p-3 py-4 m-3 msg-box w-60">
                 {{ msg.msg }}
               </div>
               <div v-if="chatbox?.userIsTyping">
-                Customer is typing...
+                {{ `${currentChatbox.customerName} さんが入力しています。。。` }}
               </div>
-              <div v-else-if="currentChatbox.isEnding"
-                class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
+              <div v-else-if="currentChatbox.isEnding" class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
                 {{ endedText }}
                 <div class="mt-2">
                   {{ formatTimestamp(currentChatbox.lastEnd) }}
@@ -22,31 +20,42 @@
               </div>
             </div>
             <div v-else class="d-flex align-items-center justify-content-center h-100 flex-column">
-              <img :src="require('@/assets/svg/empty-hourglass-svgrepo-com.svg')" alt="chatbox"
-                class="w-30 empty-text" />
+              <img :src="require('@/assets/svg/empty-hourglass-svgrepo-com.svg')" alt="chatbox" class="w-30 empty-text" />
               <div class="empty-text mt-5">Please select a chatbox</div>
             </div>
             <div ref="endElement" class="ended"></div>
           </div>
           <div class="col custom-height overflow-auto">
-            <div v-for="chatbox in chatboxes" :key="chatbox.id"
+            <div
+              v-for="chatbox in chatboxes"
+              :key="chatbox.id"
               class="h-10 chatroom-bg my-2 rounded fw-bold p-3 d-flex justify-content-center align-items-center"
               @click="selectChatbox(chatbox)"
-              :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, 'notify': chatbox.notify == true }">
+              :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, notify: chatbox.notify == true }"
+            >
               {{ chatbox.customerName }}
             </div>
           </div>
         </div>
         <div class="row border-top pt-3 flex-grow-1">
           <div class="col-9 px-0 h-100 d-flex justify-content-center align-items-center">
-            <input v-model="inputMsg" type="text" @keyup.enter="sendMsg"
+            <input
+              v-model="inputMsg"
+              type="text"
+              @keyup.enter="sendMsg"
               class="bg-theme-color w-100 form-control fw-bold h-80 p-3"
-              :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'" />
+              :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'"
+            />
           </div>
           <div class="col d-flex justify-content-around align-items-center">
-            <button class="btn btn-danger h-80 w-40" @click="sendMsg()"
+            <button
+              class="btn btn-danger h-80 w-40"
+              @click="sendMsg()"
               :disabled="currentChatbox == null || inputMsg == ''"
-              :class="{ 'inactive': currentChatbox == null || inputMsg == '' }">送信</button>
+              :class="{ inactive: currentChatbox == null || inputMsg == '' }"
+            >
+              送信
+            </button>
             <button class="btn btn-secondary h-80 w-40" @click="endSession()">終了</button>
           </div>
         </div>
@@ -114,20 +123,20 @@ export default {
       }
       console.log(status)
       const chatboxesCollection = collection(this.$firestore, 'chatboxes')
-      const q = query(chatboxesCollection, where('id', '==', this.currentChatbox.id));
-      const querySnapshot = await getDocs(q);
+      const q = query(chatboxesCollection, where('id', '==', this.currentChatbox.id))
+      const querySnapshot = await getDocs(q)
       querySnapshot.forEach((docSnapshot) => {
         const docRef = doc(chatboxesCollection, docSnapshot.id)
         updateDoc(docRef, {
           readerIsTyping: status
-        });
-      });
+        })
+      })
     },
     updateUnread(chatbox) {
       if (!chatbox) return
-      const unreads = this.unreads.filter(unread => unread.chatbox == chatbox.id)
+      const unreads = this.unreads.filter((unread) => unread.chatbox == chatbox.id)
       if (unreads) {
-        unreads.forEach(unread => {
+        unreads.forEach((unread) => {
           const colRef = collection(this.$firestore, 'unread')
           const docRef = doc(colRef, unread.id)
           updateDoc(docRef, {
@@ -141,8 +150,8 @@ export default {
       const q = query(colRef, where('chatbox', 'in', this.chatboxIds), where('isReaded', '==', false))
       this.unsubcribe_unread = onSnapshot(q, (querySnapshot) => {
         this.unreads = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-        this.chatboxes.forEach(chatbox => {
-          chatbox.notify = this.unreads.some(unread => unread.chatbox === chatbox.id)
+        this.chatboxes.forEach((chatbox) => {
+          chatbox.notify = this.unreads.some((unread) => unread.chatbox === chatbox.id)
         })
         this.updateUnread(this.currentChatbox)
       })
@@ -153,10 +162,9 @@ export default {
 
       this.unsubscribe_box = onSnapshot(q, (querySnapshot) => {
         this.chatboxes = querySnapshot.docs.map((doc) => ({ docId: doc.id, ...doc.data() }))
-        this.chatboxIds = this.chatboxes.map(chatbox => chatbox.id)
+        this.chatboxIds = this.chatboxes.map((chatbox) => chatbox.id)
         this.getUnread()
       })
-
     },
     async sendMsg() {
       if (this.currentChatbox.isEnding) {
