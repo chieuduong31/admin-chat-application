@@ -191,6 +191,7 @@ export default {
       }
     },
     async selectChatbox(chatbox) {
+      this.msgList = ''
       this.currentChatbox = chatbox
       const boxColRef = collection(this.$firestore, 'chatboxes')
       const boxRef = doc(boxColRef, chatbox.docId)
