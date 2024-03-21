@@ -10,7 +10,11 @@
                 class="p-3 py-4 m-3 msg-box w-60">
                 {{ msg.msg }}
               </div>
-              <div v-if="currentChatbox.isEnding" class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
+              <div v-if="chatbox?.userIsTyping">
+                Customer is typing...
+              </div>
+              <div v-else-if="currentChatbox.isEnding"
+                class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
                 {{ endedText }}
                 <div class="mt-2">
                   {{ formatTimestamp(currentChatbox.lastEnd) }}
@@ -24,10 +28,11 @@
             </div>
             <div ref="endElement" class="ended"></div>
           </div>
-          <div class="col">
+          <div class="col custom-height overflow-auto">
             <div v-for="chatbox in chatboxes" :key="chatbox.id"
               class="h-10 chatroom-bg my-2 rounded fw-bold p-3 d-flex justify-content-center align-items-center"
-              @click="selectChatbox(chatbox)" :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, 'notify': chatbox.notify == true }">
+              @click="selectChatbox(chatbox)"
+              :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, 'notify': chatbox.notify == true }">
               {{ chatbox.customerName }}
             </div>
           </div>
@@ -39,7 +44,10 @@
               :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'" />
           </div>
           <div class="col d-flex justify-content-around align-items-center">
-            <button class="btn btn-danger h-80 w-40" @click="sendMsg()">送信</button>
+            {{ inputMsg }}
+            <button class="btn btn-danger h-80 w-40" @click="sendMsg()"
+              :disabled="currentChatbox == null || inputMsg == ''"
+              :class="{ 'inactive': currentChatbox == null || inputMsg == '' }">送信</button>
             <button class="btn btn-secondary h-80 w-40" @click="endSession()">終了</button>
           </div>
         </div>
@@ -50,7 +58,7 @@
 
 <script>
 // eslint-disable-next-line no-unused-vars
-import { getDocs, query, where, collection, addDoc, onSnapshot, orderBy, updateDoc, doc, whereIn } from 'firebase/firestore'
+import { getDocs, query, where, collection, addDoc, onSnapshot, orderBy, updateDoc, doc, whereIn, getDoc } from 'firebase/firestore'
 
 export default {
   name: 'ChatBoxList',
@@ -67,7 +75,9 @@ export default {
       unsubscribe_message: null,
       unsubcribe_unread: null,
       unreads: [],
-      chatboxIds: []
+      chatboxIds: [],
+      chatbox: null,
+      unsubcribe_chatbox: null
     }
   },
   // computed : {
@@ -77,13 +87,43 @@ export default {
   // },
   watch: {
     msgList() {
-      this.$refs.endElement?.scrollIntoView()
+      this.$nextTick(() => {
+        this.$refs.endElement?.scrollIntoView()
+      })
     },
     currentChatbox() {
       this.updateUnread(this.currentChatbox)
+    },
+    inputMsg(newVal) {
+      if (newVal != '') {
+        this.isTyping(true)
+        this.$nextTick(() => {
+          this.$refs.endElement?.scrollIntoView()
+        })
+      } else {
+        this.isTyping(false)
+        this.$nextTick(() => {
+          this.$refs.endElement?.scrollIntoView()
+        })
+      }
     }
   },
   methods: {
+    async isTyping(status) {
+      if (!this.currentChatbox) {
+        return
+      }
+      console.log(status)
+      const chatboxesCollection = collection(this.$firestore, 'chatboxes')
+      const q = query(chatboxesCollection, where('id', '==', this.currentChatbox.id));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((docSnapshot) => {
+        const docRef = doc(chatboxesCollection, docSnapshot.id)
+        updateDoc(docRef, {
+          readerIsTyping: status
+        });
+      });
+    },
     updateUnread(chatbox) {
       if (!chatbox) return
       const unreads = this.unreads.filter(unread => unread.chatbox == chatbox.id)
@@ -102,7 +142,6 @@ export default {
       const q = query(colRef, where('chatbox', 'in', this.chatboxIds), where('isReaded', '==', false))
       this.unsubcribe_unread = onSnapshot(q, (querySnapshot) => {
         this.unreads = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-
         this.chatboxes.forEach(chatbox => {
           chatbox.notify = this.unreads.some(unread => unread.chatbox === chatbox.id)
         })
@@ -129,9 +168,9 @@ export default {
       const msg = this.inputMsg
       this.inputMsg = ''
       if (!msg) {
-        this.errorMsg = 'メッセージを入力してください'
+        this.errorMsg = 'チャットルームを選択してください。'
       } else if (!this.currentChatbox) {
-        this.errorMsg = 'チャットルームを選択してください'
+        this.errorMsg = ''
       } else {
         const colRef = collection(this.$firestore, `${this.user.id}:${this.currentChatbox.user}`)
 
@@ -144,8 +183,13 @@ export default {
         this.inputMsg = ''
       }
     },
-    selectChatbox(chatbox) {
+    async selectChatbox(chatbox) {
       this.currentChatbox = chatbox
+      const boxColRef = collection(this.$firestore, 'chatboxes')
+      const boxRef = doc(boxColRef, chatbox.docId)
+      this.unsubcribe_chatbox = onSnapshot(boxRef, (doc) => {
+        this.chatbox = { ...this.currentChatbox, ...doc.data() }
+      })
       const colRef = collection(this.$firestore, `${this.user.id}:${chatbox.user}`)
       const q = query(colRef, orderBy('createdAt', 'asc'))
 
@@ -198,6 +242,10 @@ export default {
     if (typeof this.unsubcribe_unread === 'function') {
       this.unsubcribe_unread()
     }
+
+    if (typeof this.unsubcribe_chatbox === 'function') {
+      this.unsubcribe_chatbox()
+    }
   }
 }
 </script>
@@ -205,7 +253,10 @@ export default {
 <style scoped>
 .notify {
   background-color: #c3c3c3 !important;
+}
 
+.h-300 {
+  height: 550px;
 }
 
 .box-shadow {
@@ -249,6 +300,10 @@ export default {
 
 .selected-chatbox {
   background-color: #f6ef93;
+}
+
+.inactive {
+  background-color: #f79090;
 }
 
 @media screen and (max-width: 1024px) {
