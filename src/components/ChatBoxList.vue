@@ -31,8 +31,8 @@
               :key="chatbox.id"
               class="h-10 chatroom-bg my-2 rounded fw-bold p-3 d-flex justify-content-center align-items-center"
               @click="selectChatbox(chatbox)"
-              :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, notify: chatbox.notify == true }"
-            >
+              :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, 'notify': chatbox.notify }">
+              {{ chatbox.notify > 0 ? chatbox.notify : '' }}
               {{ chatbox.customerName }}
             </div>
           </div>
@@ -153,8 +153,8 @@ export default {
       const q = query(colRef, where('chatbox', 'in', this.chatboxIds), where('isReaded', '==', false))
       this.unsubcribe_unread = onSnapshot(q, (querySnapshot) => {
         this.unreads = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-        this.chatboxes.forEach((chatbox) => {
-          chatbox.notify = this.unreads.some((unread) => unread.chatbox === chatbox.id)
+        this.chatboxes.forEach(chatbox => {
+          chatbox.notify = this.unreads.filter(unread => unread.chatbox === chatbox.id).length;
         })
         this.updateUnread(this.currentChatbox)
       })
