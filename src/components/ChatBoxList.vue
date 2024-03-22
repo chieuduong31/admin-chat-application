@@ -7,7 +7,7 @@
           <div class="col-9 bg-theme-color custom-height rounded overflow-auto">
             <div v-if="currentChatbox">
               <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id, 'other-msg' : msg.from != user.id}"
-                class="p-3 py-4 m-3 msg-box w-60">
+                class="p-3 py-4 m-3 msg-box">
                 {{ msg.msg }}
               </div>
               <div v-if="chatbox?.userIsTyping">
@@ -314,10 +314,12 @@ export default {
 .msg-box {
   --r: 35px;
   --t: 30px;
-  max-width: 300px;
+  min-width: 100px;
+  max-width: 500px;
+  width: fit-content;
   padding: calc(2*var(--r)/3);
   -webkit-mask:
-    radial-gradient(var(--t) at var(--_d) 100%, #0000 98%, #000 102%) var(--_d) 10%/calc(100% - var(--r)) var(--t) no-repeat,
+    radial-gradient(var(--t) at var(--_d) 100%, #0000 98%, #000 102%) var(--_d) 0%/calc(100% - var(--r)) var(--t) no-repeat,
     conic-gradient(at var(--r) var(--r), #000 75%, #0000 0) calc(var(--r)/-2) calc(var(--r)/-2) padding-box,
     radial-gradient(50% 50%, #000 98%, #0000 101%) 0 0%/var(--r) var(--r) space padding-box;
   overflow-wrap: break-word;
