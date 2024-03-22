@@ -84,7 +84,8 @@ export default {
       unreads: [],
       chatboxIds: [],
       chatbox: null,
-      unsubcribe_chatbox: null
+      unsubcribe_chatbox: null,
+      typingTimer: null
     }
   },
   // computed : {
@@ -104,6 +105,10 @@ export default {
     inputMsg(newVal) {
       if (newVal != '') {
         this.isTyping(true)
+        clearTimeout(this.typingTimer)
+        this.typingTimer = setTimeout(() => {
+          this.isTyping(false)
+        }, 1000)
         this.$nextTick(() => {
           this.$refs.endElement?.scrollIntoView()
         })
@@ -120,7 +125,6 @@ export default {
       if (!this.currentChatbox) {
         return
       }
-      console.log(status)
       const chatboxesCollection = collection(this.$firestore, 'chatboxes')
       const q = query(chatboxesCollection, where('id', '==', this.currentChatbox.id))
       const querySnapshot = await getDocs(q)
@@ -161,13 +165,19 @@ export default {
 
       this.unsubscribe_box = onSnapshot(q, (querySnapshot) => {
         this.chatboxes = querySnapshot.docs.map((doc) => ({ docId: doc.id, ...doc.data() }))
+        if (this.currentChatbox) {
+          this.chatboxes.filter((chatbox) => {
+            if (chatbox.id == this.currentChatbox.id) {
+              this.currentChatbox = chatbox
+            }
+          })
+        }
         this.chatboxIds = this.chatboxes.map((chatbox) => chatbox.id)
         this.getUnread()
       })
     },
     async sendMsg() {
       if (this.inputMsg.trim() === '') return
-
       if (this.currentChatbox.isEnding) {
         this.inputMsg = ''
         this.errorMsg = 'この鑑定は終了しました'
@@ -221,8 +231,9 @@ export default {
         isEnding: true,
         lastEnd: new Date()
       })
-
-      // this.currentChatbox = null
+      this.getChatboxes()
+      this.$refs.endElement?.scrollIntoView()
+      // this.currentChatbox.isEnding = true
     },
     formatTimestamp(timestamp) {
       const date = timestamp.toDate()
@@ -285,6 +296,7 @@ export default {
   background-color: #bdffbb !important;
   align-self: flex-end;
   margin-left: auto !important;
+  white-space: pre-wrap;
 }
 
 .other-msg {
