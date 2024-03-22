@@ -6,13 +6,15 @@
         <div class="row h-80 mb-3">
           <div class="col-9 bg-theme-color custom-height rounded overflow-auto">
             <div v-if="currentChatbox">
-              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id }" class="p-3 py-4 m-3 msg-box w-60">
+              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id, 'other-msg' : msg.from != user.id}"
+                class="p-3 py-4 m-3 msg-box w-60">
                 {{ msg.msg }}
               </div>
               <div v-if="chatbox?.userIsTyping">
                 {{ `${currentChatbox.customerName} さんが入力しています。。。` }}
               </div>
-              <div v-else-if="currentChatbox.isEnding" class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
+              <div v-else-if="currentChatbox.isEnding"
+                class="d-flex h5 flex-column align-items-center w-100 fw-bold mt-5">
                 {{ endedText }}
                 <div class="mt-2">
                   {{ formatTimestamp(currentChatbox.lastEnd) }}
@@ -20,39 +22,31 @@
               </div>
             </div>
             <div v-else class="d-flex align-items-center justify-content-center h-100 flex-column">
-              <img :src="require('@/assets/svg/empty-hourglass-svgrepo-com.svg')" alt="chatbox" class="w-30 empty-text" />
+              <img :src="require('@/assets/svg/empty-hourglass-svgrepo-com.svg')" alt="chatbox"
+                class="w-30 empty-text" />
               <div class="empty-text mt-5">Please select a chatbox</div>
             </div>
             <div ref="endElement" class="ended"></div>
           </div>
           <div class="col custom-height overflow-auto">
-            <div
-              v-for="chatbox in chatboxes"
-              :key="chatbox.id"
+            <div v-for="chatbox in chatboxes" :key="chatbox.id"
               class="h-10 chatroom-bg my-2 rounded fw-bold p-3 d-flex justify-content-center align-items-center"
               @click="selectChatbox(chatbox)"
               :class="{ 'selected-chatbox': chatbox.id == currentChatbox?.id, 'notify': chatbox.notify }">
-              {{ chatbox.notify > 0 ? chatbox.notify : '' }}
               {{ chatbox.customerName }}
+              <span class="notification">{{ chatbox.notify > 0 ? chatbox.notify : '' }}</span>
             </div>
           </div>
         </div>
         <div class="row border-top pt-3 flex-grow-1">
           <div class="col-9 px-0 h-100 d-flex justify-content-center align-items-center">
-            <textarea
-              v-model="inputMsg"
-              type="text"
-              class="bg-theme-color w-100 form-control fw-bold h-80 p-3"
-              :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'"
-            />
+            <textarea v-model="inputMsg" type="text" class="bg-theme-color w-100 form-control fw-bold h-80 p-3"
+              :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'" />
           </div>
           <div class="col d-flex justify-content-around align-items-center">
-            <button
-              class="btn btn-danger h-80 w-40"
-              @click="sendMsg()"
+            <button class="btn btn-danger h-80 w-40" @click="sendMsg()"
               :disabled="currentChatbox == null || inputMsg == ''"
-              :class="{ inactive: currentChatbox == null || inputMsg == '' }"
-            >
+              :class="{ inactive: currentChatbox == null || inputMsg == '' }">
               送信
             </button>
             <button class="btn btn-secondary h-80 w-40" @click="endSession()">終了</button>
@@ -184,7 +178,9 @@ export default {
         this.errorMsg = 'この鑑定は終了しました'
         return
       }
-      const msg = this.inputMsg
+      //remove whitespace at end
+      const msg = this.inputMsg.trim()
+      // const msg = this.inputMsg
       this.inputMsg = ''
       if (!msg) {
         this.errorMsg = 'チャットルームを選択してください。'
@@ -298,16 +294,33 @@ export default {
   align-self: flex-end;
   margin-left: auto !important;
   white-space: pre-wrap;
+  --_d: 100%;
+  border-right: var(--t) solid #0000;
+  margin-left: var(--t);
+  place-self: end;
+  background: rgb(143, 255, 160);
 }
 
 .other-msg {
   background-color: #f5f5f5;
   align-self: flex-start;
+  --_d: 0%;
+  border-left: var(--t) solid #0000;
+  margin-right: var(--t);
+  place-self: start;
+  background: rgb(255, 255, 255);
 }
 
 .msg-box {
-  background-color: #ffffff;
-  border-radius: 10px;
+  --r: 35px;
+  --t: 30px;
+  max-width: 300px;
+  padding: calc(2*var(--r)/3);
+  -webkit-mask:
+    radial-gradient(var(--t) at var(--_d) 100%, #0000 98%, #000 102%) var(--_d) 10%/calc(100% - var(--r)) var(--t) no-repeat,
+    conic-gradient(at var(--r) var(--r), #000 75%, #0000 0) calc(var(--r)/-2) calc(var(--r)/-2) padding-box,
+    radial-gradient(50% 50%, #000 98%, #0000 101%) 0 0%/var(--r) var(--r) space padding-box;
+  overflow-wrap: break-word;
 }
 
 .custom-height {
@@ -326,6 +339,16 @@ export default {
 
 .inactive {
   background-color: #f79090;
+}
+
+.notification {
+  background-color: #ff2c2c;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  margin-left: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 @media screen and (max-width: 1024px) {
