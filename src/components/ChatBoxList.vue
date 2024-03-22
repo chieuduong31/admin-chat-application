@@ -39,10 +39,9 @@
         </div>
         <div class="row border-top pt-3 flex-grow-1">
           <div class="col-9 px-0 h-100 d-flex justify-content-center align-items-center">
-            <input
+            <textarea
               v-model="inputMsg"
               type="text"
-              @keyup.enter="sendMsg"
               class="bg-theme-color w-100 form-control fw-bold h-80 p-3"
               :placeholder="errorMsg ? errorMsg : '鑑定を開始します。'"
             />
@@ -167,6 +166,8 @@ export default {
       })
     },
     async sendMsg() {
+      if (this.inputMsg.trim() === '') return
+
       if (this.currentChatbox.isEnding) {
         this.inputMsg = ''
         this.errorMsg = 'この鑑定は終了しました'
