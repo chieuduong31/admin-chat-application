@@ -320,6 +320,7 @@ export default {
     conic-gradient(at var(--r) var(--r), #000 75%, #0000 0) calc(var(--r)/-2) calc(var(--r)/-2) padding-box,
     radial-gradient(50% 50%, #000 98%, #0000 101%) 0 0%/var(--r) var(--r) space padding-box;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .custom-height {
