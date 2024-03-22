@@ -149,6 +149,7 @@ export default {
       }
     },
     getUnread() {
+      if (!this.chatboxIds.length) return
       const colRef = collection(this.$firestore, 'unread')
       const q = query(colRef, where('chatbox', 'in', this.chatboxIds), where('isReaded', '==', false))
       this.unsubcribe_unread = onSnapshot(q, (querySnapshot) => {
