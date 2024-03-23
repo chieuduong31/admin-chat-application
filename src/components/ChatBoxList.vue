@@ -6,8 +6,7 @@
         <div class="row h-80 mb-3">
           <div class="col-9 bg-theme-color custom-height rounded overflow-auto">
             <div v-if="currentChatbox">
-              <div v-for="msg in msgList" :key="msg.id"
-                :class="{ 'my-msg': msg.from == user.id, 'other-msg': msg.from != user.id }"
+              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id, 'other-msg' : msg.from != user.id}"
                 class="p-3 py-4 m-3 msg-box">
                 {{ msg.msg }}
               </div>
@@ -80,9 +79,7 @@ export default {
       chatboxIds: [],
       chatbox: null,
       unsubcribe_chatbox: null,
-      typingTimer: null,
-      timeLeft: 60 * 10,
-      countdown: null,
+      typingTimer: null
     }
   },
   // computed : {
@@ -95,7 +92,6 @@ export default {
       this.$nextTick(() => {
         this.$refs.endElement?.scrollIntoView()
       })
-      this.startCountdown()
     },
     currentChatbox() {
       this.updateUnread(this.currentChatbox)
@@ -146,21 +142,6 @@ export default {
         })
       }
     },
-    startCountdown() {
-      if (this.countdown) {
-        clearInterval(this.countdown);
-      }
-
-      this.timeLeft = 60 * 10; // Reset the countdown)
-      this.countdown = setInterval(() => {
-        if (this.timeLeft <= 0) {
-          clearInterval(this.countdown);
-          this.endSession();
-        } else {
-          this.timeLeft--;
-        }
-      }, 1000);
-    },
     getUnread() {
       if (!this.chatboxIds.length) return
       const colRef = collection(this.$firestore, 'unread')
@@ -197,7 +178,9 @@ export default {
         this.errorMsg = 'この鑑定は終了しました'
         return
       }
+      //remove whitespace at end
       const msg = this.inputMsg.trim()
+      // const msg = this.inputMsg
       this.inputMsg = ''
       if (!msg) {
         this.errorMsg = 'チャットルームを選択してください。'
@@ -205,6 +188,7 @@ export default {
         this.errorMsg = ''
       } else {
         const colRef = collection(this.$firestore, `${this.user.id}:${this.currentChatbox.user}`)
+
         await addDoc(colRef, {
           to: this.currentChatbox.user,
           from: this.user.id,
@@ -229,17 +213,9 @@ export default {
         this.unsubscribe_message()
       }
 
-      this.unsubscribe_message = await onSnapshot(q, (querySnapshot) => {
+      this.unsubscribe_message = onSnapshot(q, (querySnapshot) => {
         this.msgList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-        const latestMsg = this.msgList[this.msgList.length - 1]
-
-        const now = new Date()
-        const diff = now - latestMsg.createdAt.toDate()
-        if (diff > 600000) {
-          this.endSession()
-        }
       })
-
     },
     async endSession() {
       if (!this.currentChatbox) {
