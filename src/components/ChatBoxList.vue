@@ -234,7 +234,7 @@ export default {
         const latestMsg = this.msgList[this.msgList.length - 1]
 
         const now = new Date()
-        const diff = now - latestMsg.createdAt.toDate()
+        const diff = now - latestMsg?.createdAt.toDate()
         if (diff > 600000) {
           this.endSession()
         }
