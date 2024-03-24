@@ -211,7 +211,7 @@ export default {
           const lastMessage = this.chatbox.lastMessage.toDate()
           const now = new Date()
           const diff = now.getTime() - lastMessage?.getTime()
-          if (diff > 200000) {
+          if (diff > 600000) {
             this.endSession()
           }
         }
