@@ -211,6 +211,7 @@ export default {
           msg: msg,
           createdAt: new Date()
         })
+        this.lastMessage()
         this.inputMsg = ''
       }
     },
@@ -221,6 +222,15 @@ export default {
       const boxRef = doc(boxColRef, chatbox.docId)
       this.unsubcribe_chatbox = onSnapshot(boxRef, (doc) => {
         this.chatbox = { ...this.currentChatbox, ...doc.data() }
+
+        if (this.chatbox.lastMessage) {
+          const lastMessage = this.chatbox.lastMessage.toDate()
+          const now = new Date()
+          const diff = now.getTime() - lastMessage?.getTime()
+          if (diff > 200000) {
+            this.endSession()
+          }
+        }
       })
       const colRef = collection(this.$firestore, `${this.user.id}:${chatbox.user}`)
       const q = query(colRef, orderBy('createdAt', 'asc'))
@@ -231,15 +241,16 @@ export default {
 
       this.unsubscribe_message = await onSnapshot(q, (querySnapshot) => {
         this.msgList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-        const latestMsg = this.msgList[this.msgList.length - 1]
-
-        const now = new Date()
-        const diff = now - latestMsg?.createdAt.toDate()
-        if (diff > 600000) {
-          this.endSession()
-        }
       })
 
+    },
+    async lastMessage() {
+      const colRef = collection(this.$firestore, 'chatboxes')
+      const docRef = doc(colRef, this.currentChatbox.docId)
+
+      await updateDoc(docRef, {
+        lastMessage: new Date()
+      })
     },
     async endSession() {
       if (!this.currentChatbox) {
@@ -250,11 +261,10 @@ export default {
       const docRef = doc(colRef, this.currentChatbox.docId)
       await updateDoc(docRef, {
         isEnding: true,
-        lastEnd: new Date()
+        lastEnd: new Date(),
       })
       this.getChatboxes()
       this.$refs.endElement?.scrollIntoView()
-      // this.currentChatbox.isEnding = true
     },
     formatTimestamp(timestamp) {
       const date = timestamp.toDate()
