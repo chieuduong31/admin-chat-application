@@ -50,7 +50,8 @@
               :class="{ inactive: currentChatbox == null || inputMsg == '' }">
               送信
             </button>
-            <button class="btn btn-secondary h-80 w-40" @click="endSession()">終了</button>
+            <button class="btn btn-secondary h-80 w-40" @click="endSession()"
+            :disabled="currentChatbox == null || chatbox?.isEnding">終了</button>
           </div>
         </div>
       </div>
