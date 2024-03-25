@@ -1,4 +1,4 @@
-  <template>
+<template>
   <div class="d-flex bg-theme-color justify-content-center align-items-center vh-100 p-5">
     <div class="w-90 p-3 rounded bg-white box-shadow h-100 d-flex flex-column">
       <div class="h3 fw-bold text-center w-100 border-bottom pb-3">{{ user.username }}</div>
@@ -6,7 +6,8 @@
         <div class="row h-80 mb-3">
           <div class="col-9 bg-theme-color custom-height rounded overflow-auto">
             <div v-if="currentChatbox">
-              <div v-for="msg in msgList" :key="msg.id" :class="{ 'my-msg': msg.from == user.id, 'other-msg' : msg.from != user.id}"
+              <div v-for="msg in msgList" :key="msg.id"
+                :class="{ 'my-msg': msg.from == user.id, 'other-msg': msg.from != user.id }"
                 class="p-3 py-4 m-3 msg-box">
                 {{ msg.msg }}
               </div>
@@ -82,6 +83,7 @@ export default {
       typingTimer: null,
       timeLeft: 60 * 10,
       countdown: null,
+      prevLastMessage: null,
     }
   },
   // computed : {
@@ -116,14 +118,15 @@ export default {
         })
       }
     },
-    chatbox() {
-      console.log(this.chatbox)
-      if (!this.chatbox?.isEnding) {
-        this.startCountdown()
-      } else {
-        clearInterval(this.countdown)
-      }
-    }
+    'chatbox.lastMessage': {
+      handler(newVal) {
+        if (newVal?.toDate().getTime() != this.prevLastMessage?.toDate().getTime() && !this.chatbox?.isEnding) {
+          clearInterval(this.countdown);
+          this.startCountdown();
+        }
+        this.prevLastMessage = newVal;
+      },
+    },
   },
   methods: {
     async isTyping(status) {
@@ -154,7 +157,6 @@ export default {
       }
     },
     startCountdown() {
-      console.log(this.countdown)
       if (this.countdown) {
         clearInterval(this.countdown);
       }
@@ -234,8 +236,7 @@ export default {
       const boxRef = doc(boxColRef, chatbox.docId)
       this.unsubcribe_chatbox = onSnapshot(boxRef, (doc) => {
         this.chatbox = { ...this.currentChatbox, ...doc.data() }
-        console.log(this.chatbox)
-        if (this.chatbox.lastMessage) {
+        if (this.chatbox.lastMessage && !this.chatbox.isEnding) {
           const lastMessage = this.chatbox.lastMessage.toDate()
           const now = new Date()
           const diff = now.getTime() - lastMessage?.getTime()
