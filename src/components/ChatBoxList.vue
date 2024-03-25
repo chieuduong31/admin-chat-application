@@ -1,4 +1,4 @@
-<template>
+  <template>
   <div class="d-flex bg-theme-color justify-content-center align-items-center vh-100 p-5">
     <div class="w-90 p-3 rounded bg-white box-shadow h-100 d-flex flex-column">
       <div class="h3 fw-bold text-center w-100 border-bottom pb-3">{{ user.username }}</div>
@@ -79,7 +79,9 @@ export default {
       chatboxIds: [],
       chatbox: null,
       unsubcribe_chatbox: null,
-      typingTimer: null
+      typingTimer: null,
+      timeLeft: 60 * 10,
+      countdown: null,
     }
   },
   // computed : {
@@ -92,6 +94,7 @@ export default {
       this.$nextTick(() => {
         this.$refs.endElement?.scrollIntoView()
       })
+      // this.startCountdown()
     },
     currentChatbox() {
       this.updateUnread(this.currentChatbox)
@@ -111,6 +114,14 @@ export default {
         this.$nextTick(() => {
           this.$refs.endElement?.scrollIntoView()
         })
+      }
+    },
+    chatbox() {
+      console.log(this.chatbox)
+      if (!this.chatbox?.isEnding) {
+        this.startCountdown()
+      } else {
+        clearInterval(this.countdown)
       }
     }
   },
@@ -141,6 +152,23 @@ export default {
           })
         })
       }
+    },
+    startCountdown() {
+      console.log(this.countdown)
+      if (this.countdown) {
+        clearInterval(this.countdown);
+      }
+
+      this.timeLeft = 60 * 10; // Reset the countdown)
+      this.countdown = setInterval(() => {
+        console.log(this.timeLeft)
+        if (this.timeLeft <= 0) {
+          clearInterval(this.countdown);
+          this.endSession();
+        } else {
+          this.timeLeft--;
+        }
+      }, 1000);
     },
     getUnread() {
       if (!this.chatboxIds.length) return
@@ -206,7 +234,7 @@ export default {
       const boxRef = doc(boxColRef, chatbox.docId)
       this.unsubcribe_chatbox = onSnapshot(boxRef, (doc) => {
         this.chatbox = { ...this.currentChatbox, ...doc.data() }
-
+        console.log(this.chatbox)
         if (this.chatbox.lastMessage) {
           const lastMessage = this.chatbox.lastMessage.toDate()
           const now = new Date()
@@ -216,6 +244,7 @@ export default {
           }
         }
       })
+
       const colRef = collection(this.$firestore, `${this.user.id}:${chatbox.user}`)
       const q = query(colRef, orderBy('createdAt', 'asc'))
 
